@@ -77,6 +77,30 @@ func main() {
 					return pauseTaskProcessing(str)
 				},
 			},
+			{
+				Name:    "resume",
+				Aliases: []string{"r"},
+				Usage:   "resume",
+				Action: func(c *cli.Context) error {
+					str := c.Args().First()
+					if str == "" {
+						str = "@"
+					}
+					return resumeTaskProcessing(str)
+				},
+			},
+			{
+				Name:    "stop",
+				Aliases: []string{"s"},
+				Usage:   "stop",
+				Action: func(c *cli.Context) error {
+					str := c.Args().First()
+					if str == "" {
+						str = "@"
+					}
+					return stopTaskProcessing(str)
+				},
+			},
 		},
 	}
 	err := app.Run(os.Args)
@@ -122,6 +146,37 @@ func pauseTaskProcessing(workType string) error {
 	return err
 }
 
-// func stopTaskProcessing() error {
+func resumeTaskProcessing(workType string) error {
+	filter := bson.D{
+		{Key: "$and",
+			Value: bson.A{
+				bson.D{{Key: "workType", Value: workType}},
+				bson.D{{Key: "status", Value: "PAUSED"}}},
+		}}
 
-// }
+	update := bson.M{
+		"$set": bson.M{
+			"status": "STARTED",
+		},
+		"$push": bson.M{
+			"resumeTime": time.Now(), // The value you want to add to the array.
+		},
+	}
+	_, err := collection.UpdateMany(ctx, filter, update)
+	return err
+}
+
+func stopTaskProcessing(workType string) error {
+	filter := bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"workType", workType}},
+				bson.D{{"status", bson.D{{"$ne", "STOPPED"}}}}},
+		}}
+
+	update := bson.D{{"$set",
+		bson.D{{"status", "STOPPED"}, {"endTime", time.Now()}}}}
+
+	_, err := collection.UpdateOne(ctx, filter, update)
+	return err
+}
