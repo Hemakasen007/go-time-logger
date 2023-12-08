@@ -139,7 +139,7 @@ func pauseTaskProcessing(workType string) error {
 			"status": "PAUSED",
 		},
 		"$push": bson.M{
-			"pausedTime": time.Now(), // The value you want to add to the array.
+			"pausedTime": time.Now(),
 		},
 	}
 	_, err := collection.UpdateMany(ctx, filter, update)
